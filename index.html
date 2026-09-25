@@ -146,6 +146,29 @@ button{touch-action:manipulation;user-select:none;-webkit-user-select:none}
 .party-teaser .pt-lock{font-size:10px;font-weight:900;letter-spacing:.14em;padding:3px 8px;border-radius:99px;
   color:#04121a;background:linear-gradient(135deg,#FFD166,#FF8A3D);flex:none}
 
+/* daily challenge button (live mode) */
+.daily-btn{margin-top:8px;width:100%;min-height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:8px;
+  cursor:pointer;color:#CFF3FF;font-size:12px;letter-spacing:.06em;
+  background:linear-gradient(135deg,rgba(0,217,255,.14),rgba(123,47,255,.1));
+  border:1px solid rgba(0,217,255,.4);
+  transition:transform .12s ease,box-shadow .25s ease}
+.daily-btn:active{transform:scale(.97)}
+.daily-btn:hover{box-shadow:0 10px 26px -12px rgba(0,217,255,.7)}
+.daily-btn b{font-weight:900;letter-spacing:.1em}
+.daily-btn .db-txt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.daily-btn .db-cal{flex:none;width:32px;border-radius:7px;overflow:hidden;background:#F5F1E7;
+  display:flex;flex-direction:column;align-items:center;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+.daily-btn .db-cal i{display:block;width:100%;background:#E8343F;color:#fff;font-style:normal;
+  font-size:7px;font-weight:900;letter-spacing:.08em;text-align:center;padding:2px 0}
+.daily-btn .db-cal b{display:block;color:#1B2340;font-size:14px;font-weight:900;padding:3px 0 4px;font-family:'Baloo 2',sans-serif}
+.daily-btn .db-best{opacity:.75;font-weight:700}
+.daily-btn .db-streak{font-size:10px;font-weight:900;letter-spacing:.12em;padding:3px 8px;border-radius:99px;
+  color:#221100;background:linear-gradient(135deg,#FFD166,#FF8A3D);flex:none}
+.rank-pill{display:inline-flex;align-items:center;gap:8px;padding:8px 18px;border-radius:99px;
+  font-size:15px;font-weight:900;letter-spacing:.1em;color:#221100;
+  background:linear-gradient(135deg,#FFD166,#FF8A3D);
+  box-shadow:0 10px 28px -12px rgba(255,180,60,.8)}
+
 /* ---------- timer ---------- */
 .timer{
   font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
@@ -177,8 +200,13 @@ button{touch-action:manipulation;user-select:none;-webkit-user-select:none}
 
 /* ---------- puzzle circle ---------- */
 .circle-wrap{position:relative;width:100%;max-width:456px;aspect-ratio:1/1;margin:0 auto}
-#puzzle{position:absolute;inset:0;width:100%;height:100%;overflow:visible;display:block;
+/* each ring = its own stacked SVG => browser rotates ONE cached layer per ring
+   on the GPU instead of re-rasterizing 49 paths every frame */
+.ringSvg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;display:block;
   z-index:1;pointer-events:none}
+.ringSvg.spin{will-change:transform}
+#vigDiv{position:absolute;inset:0;z-index:2;pointer-events:none;border-radius:50%;
+  background:radial-gradient(circle at 50% 46%, rgba(0,0,0,0) 62%, rgba(30,42,68,.08) 100%)}
 #numLayer{position:absolute;inset:0;z-index:2;pointer-events:none}
 .segPath{stroke:var(--segline);stroke-width:1.5;transition:fill .18s,stroke .18s}
 .segPath.found{fill:#E9E3D0;stroke:#C9C2AD}
@@ -310,6 +338,7 @@ select.native{width:100%;min-height:50px;border-radius:14px;background:rgba(0,0,
 /* ---------- misc ---------- */
 .reveal{opacity:0;transform:translateY(18px);transition:opacity .6s ease,transform .6s ease}
 .reveal.in{opacity:1;transform:none}
+.reveal{content-visibility:auto;contain-intrinsic-size:auto 420px}
 .safe-b{padding-bottom:calc(22px + env(safe-area-inset-bottom,0px))}
 .safe-t{padding-top:calc(14px + env(safe-area-inset-top,0px))}
 ::selection{background:rgba(0,217,255,.35)}
@@ -347,7 +376,7 @@ select.native{width:100%;min-height:50px;border-radius:14px;background:rgba(0,0,
         </span>
         <div class="min-w-0">
           <h1 class="brand-grad text-[17px] sm:text-[19px] font-black tracking-[.16em] leading-none truncate">FOCUSFLOW PRO</h1>
-          <p class="text-[9.5px] tracking-[.28em] text-[#7C879C] font-bold mt-1">TARGET BOARD <span class="text-[#00D9FF]">· v8</span></p>
+          <p class="text-[9.5px] tracking-[.28em] text-[#7C879C] font-bold mt-1">TARGET BOARD <span class="text-[#00D9FF]">· v9.1</span></p>
         </div>
       </div>
       <button id="muteBtn" class="icon-btn shrink-0" aria-label="Toggle sound" title="Sound on/off">
@@ -372,6 +401,19 @@ select.native{width:100%;min-height:50px;border-radius:14px;background:rgba(0,0,
     </p>
   </section>
 
+  <!-- ================= CHALLENGE BANNER (beat-your-friend link) ================= -->
+  <section id="challengeBar" class="mx-auto max-w-3xl px-3 sm:px-4 hidden">
+    <div class="glass p-4 mb-4 flex items-center gap-3" style="border-color:rgba(255,209,102,.55)">
+      <span class="text-[26px]">⚔️</span>
+      <div class="min-w-0 flex-1">
+        <p class="text-[13.5px] font-black leading-snug"><span id="chWho" class="text-[#FFD166]">A friend</span> finished 1–50 in <span id="chTime" class="text-[#FFD166]">01:12</span>.</p>
+        <p class="text-[11.5px] text-[#93A0B5] font-bold mt-0.5">Beat them 👊</p>
+      </div>
+      <button id="btnAccept" class="btn btn-warn shrink-0">ACCEPT</button>
+      <button id="btnChClose" class="icon-btn shrink-0" aria-label="Dismiss">✕</button>
+    </div>
+  </section>
+
   <!-- ================= GAME ================= -->
   <main class="mx-auto max-w-3xl px-3 sm:px-4">
     <div class="glass overflow-hidden">
@@ -387,6 +429,11 @@ select.native{width:100%;min-height:50px;border-radius:14px;background:rgba(0,0,
           <button type="button" data-level="med" aria-pressed="false">Medium<small>REVERSE ring 🌀 · fast</small></button>
           <button type="button" data-level="adv" aria-pressed="false">Advanced<small>mixed speeds 😈</small></button>
         </div>
+        <button id="btnDaily" class="daily-btn" type="button" aria-label="Daily challenge — same board for everyone today">
+          <span class="db-cal" aria-hidden="true"><i id="calMon">SEP</i><b id="calDay">25</b></span>
+          <span class="db-txt"><b>DAILY CHALLENGE</b> · <span id="dailyDayTxt">Day #1</span> <span id="dailyBestTxt" class="db-best"></span></span>
+          <span class="db-streak" id="dailyStreakTxt">🔥 ×0</span>
+        </button>
         <button id="btnPartyTeaser" class="party-teaser" type="button" aria-label="Party mode — coming soon, join the waitlist">
           <span class="pt-crown">👑</span>
           <span class="pt-txt"><b>PARTY MODE</b> · pass the phone · 2–4 players</span>
@@ -413,7 +460,11 @@ select.native{width:100%;min-height:50px;border-radius:14px;background:rgba(0,0,
       <!-- circle -->
       <div class="px-0.5 sm:px-4">
         <div id="circleWrap" class="circle-wrap">
-          <svg id="puzzle" viewBox="0 0 600 600" role="img" aria-label="Target board with numbers"></svg>
+          <svg id="puzzleBase" class="ringSvg" viewBox="0 0 600 600" role="img" aria-label="Target board"></svg>
+          <svg id="ringSvg0" class="ringSvg spin" viewBox="0 0 600 600" aria-hidden="true"></svg>
+          <svg id="ringSvg1" class="ringSvg spin" viewBox="0 0 600 600" aria-hidden="true"></svg>
+          <svg id="ringSvg2" class="ringSvg spin" viewBox="0 0 600 600" aria-hidden="true"></svg>
+          <div id="vigDiv" aria-hidden="true"></div>
           <div id="numLayer" aria-hidden="false"></div>
           <div class="center-target" aria-live="off">
             <span class="tlbl" id="targetLabel">FIND</span>
@@ -536,8 +587,9 @@ select.native{width:100%;min-height:50px;border-radius:14px;background:rgba(0,0,
       </ul>
 
       <div id="waitlistForm" class="mt-5">
-        <form id="wlForm" class="flex flex-col sm:flex-row gap-2.5" novalidate>
-          <input id="wlEmail" class="field" type="email" inputmode="email" autocomplete="email"
+        <form id="wlForm" name="ffp-waitlist" method="POST" data-netlify="true" netlify class="flex flex-col sm:flex-row gap-2.5" novalidate>
+          <input type="hidden" name="form-name" value="ffp-waitlist">
+          <input id="wlEmail" name="email" class="field" type="email" inputmode="email" autocomplete="email"
                  placeholder="you@email.com" aria-label="Email address" required>
           <button id="wlBtn" class="btn btn-primary btn-lg sm:w-auto shrink-0" type="submit">JOIN WAITLIST</button>
         </form>
@@ -583,7 +635,7 @@ select.native{width:100%;min-height:50px;border-radius:14px;background:rgba(0,0,
         Built by <span class="text-[#CFE9FF]">Sandyad Atelier</span> <span class="text-[#3B4457]">|</span> Free Beta <span class="text-[#3B4457]">|</span> 100% Free
       </p>
       <p class="text-[10.5px] text-[#5C6577] mt-2">Your times, coins &amp; email never leave this device.</p>
-      <p class="text-[9.5px] text-[#3B4457] mt-1 font-mono tracking-widest">BUILD v8 · ENGLISH · COIN DRAIN</p>
+      <p class="text-[9.5px] text-[#3B4457] mt-1 font-mono tracking-widest">BUILD v9.1 · FRESH EVERY RUN</p>
     </footer>
   </main>
 </div>
@@ -607,22 +659,28 @@ select.native{width:100%;min-height:50px;border-radius:14px;background:rgba(0,0,
       <p id="mSub" class="text-[11.5px] text-[#8C99AE] mt-2 font-bold tracking-wide">STARTING · 1–50</p>
     </div>
 
+    <div id="mRankBadge" class="mt-4 text-center">
+      <span class="rank-pill"><span id="mRankIcon">⚡</span> <span id="mRankName">FOCUS NINJA</span></span>
+    </div>
+
     <div id="mRank" class="mt-3 text-center text-[12.5px] font-bold text-[#9FE9FF]"></div>
+    <p id="mCompare" class="mt-1.5 text-center text-[11.5px] font-bold text-[#8C99AE]"></p>
+    <p id="mDaily" class="mt-1 text-center text-[11.5px] font-bold text-[#FFB84D] hidden"></p>
 
     <div class="mt-4">
-      <p class="tiny-label mb-2">Share your result</p>
+      <p class="tiny-label mb-2">Story card + challenge link</p>
+      <input id="mName" class="field mb-2.5" type="text" maxlength="16" inputmode="text" autocomplete="name"
+             placeholder="Your name (for the challenge link)" aria-label="Your name">
       <div class="grid grid-cols-2 gap-2.5">
-        <button id="btnCopy" class="btn btn-primary">
-          <svg viewBox="0 0 24 24" class="w-[16px] h-[16px]" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
-          <span id="copyLabel">COPY</span>
-        </button>
-        <button id="btnNative" class="btn btn-ghost hidden">
-          <svg viewBox="0 0 24 24" class="w-[16px] h-[16px]" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M12 16V3"/><path d="m7.5 7.5 4.5-4.5 4.5 4.5"/></svg>
-          SHARE
-        </button>
+        <button id="btnStory" class="btn btn-warn">📸 <span id="storyLabel">STORY IMAGE</span></button>
+        <button id="btnCopy" class="btn btn-primary">🔗 <span id="copyLabel">COPY LINK</span></button>
       </div>
+      <button id="btnNative" class="btn btn-ghost w-full mt-2.5 hidden">
+        <svg viewBox="0 0 24 24" class="w-[16px] h-[16px]" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M12 16V3"/><path d="m7.5 7.5 4.5-4.5 4.5 4.5"/></svg>
+        SHARE
+      </button>
       <p id="sharePreview" class="mt-2.5 text-[11.5px] text-[#7E8CA3] leading-relaxed break-words"></p>
-      <p class="mt-2 text-[10.5px] font-bold tracking-wide text-[#FFD166]">🎨 Coming in Pro: PATH ART cards — your run as un-copiable neon artwork · 👑 PARTY MODE — join the waitlist on this page ↓</p>
+      <p class="mt-2 text-[10.5px] font-bold tracking-wide text-[#8C99AE]">🎥 Record your run — POV gameplay is trending. Tag <span class="text-[#FFD166]">#FocusChallenge</span> 👀</p>
     </div>
 
     <div class="hair my-4"></div>
@@ -650,7 +708,8 @@ select.native{width:100%;min-height:50px;border-radius:14px;background:rgba(0,0,
    - Board = numbers 2..50 in 3 rings (24/15/10 cells); centre red digit is
      the NEXT target. At START, "1" auto-clears (free coin) exactly like the
      viral screenshot where 1 never appears as a tappable cell.
-   - PER-RING spin: each ring is its own SVG <g> with its own WAAPI rotation.
+   - PER-RING spin: each ring is its own stacked SVG layer, rotated as ONE
+     GPU-cached layer via WAAPI (zero per-frame re-rasterization).
      Starting: all 18s same way. Medium: middle ring REVERSES at 12s.
      Advanced: 9s / 6s reverse / 9s + speed bursts every 10 finds.
    - Numbers are GPU-composited HTML layers positioned per-frame from the
@@ -780,6 +839,10 @@ select.native{width:100%;min-height:50px;border-radius:14px;background:rgba(0,0,
              tag: 'ADVANCED · 1–50 · MIXED SPEEDS 😈', burst: true }
   };
   var LEVEL_ORDER = ['start', 'med', 'adv'];
+  /* Wordle-style daily: same board for everyone, driven by the date */
+  LEVELS.daily = { label: 'DAILY', seed: 0, grace: 5000,
+    spin: [{ dur: 12000, dir: 1 }, { dur: 12000, dir: 1 }, { dur: 12000, dir: 1 }],
+    tag: 'DAILY', burst: false, daily: true };
 
   /* EXACT screenshot arrangement (Starting) — clockwise from top, ring by ring */
   var LAYOUT_START = [
@@ -788,17 +851,114 @@ select.native{width:100%;min-height:50px;border-radius:14px;background:rgba(0,0,
     [32, 27, 2, 24, 42, 25, 10, 39, 45, 4]
   ];
 
+  /* anti-boredom: MEDIUM/ADVANCED get a FRESH shuffled board on every run entry;
+     STARTING stays the exact viral board, DAILY stays date-seeded (same for all) */
+  var RUN_SEED = { med: 7, adv: 13 };
+  function freshSeed(lvl) {
+    if (lvl !== 'med' && lvl !== 'adv') return;
+    var s;
+    do { s = Math.floor(Math.random() * 2147483646) + 1; } while (s === RUN_SEED[lvl]);
+    RUN_SEED[lvl] = s;
+  }
+
   function layoutFor(levelKey) {
     var flat = [], i, k, t;
     if (levelKey === 'start') {
       for (i = 0; i < 3; i++) flat = flat.concat(LAYOUT_START[i]);
       return flat.map(String);
     }
-    var rnd = seedRand(LEVELS[levelKey].seed || 1);
+    var rnd = seedRand(levelKey === 'daily' ? dailySeed() : (RUN_SEED[levelKey] || LEVELS[levelKey].seed || 1));
     var nums = [];
     for (i = 2; i <= MAXN; i++) nums.push(i);
     for (i = nums.length - 1; i > 0; i--) { k = Math.floor(rnd() * (i + 1)); t = nums[i]; nums[i] = nums[k]; nums[k] = t; }
     return nums.map(String);
+  }
+
+  /* ---------------- ranks, percentile & daily helpers ---------------- */
+  var DAY_EPOCH = new Date(2026, 8, 25).getTime(); /* Day #1 = 2026-09-25 local midnight (seed & streak keys are also local-date based) */
+  function dayNumber() { return Math.max(1, Math.floor((Date.now() - DAY_EPOCH) / 86400000) + 1); }
+  function dailySeed() {
+    var d = new Date();
+    return ((d.getFullYear() * 372 + (d.getMonth() + 1) * 31 + d.getDate()) * 2654435761) % 2147483647;
+  }
+  function dailyBestKey() { return 'ffp_daily_' + todayKey(); }
+  function readDailyStreak() { return store.get('ffp_daily_streak', { count: 0, last: '' }); }
+  function updateDailyStreak() {
+    var s = readDailyStreak(), tk = todayKey();
+    if (s.last === tk) return s;
+    var y = new Date(Date.now() - 86400000);
+    var yk = y.getFullYear() + '-' + String(y.getMonth() + 1).padStart(2, '0') + '-' + String(y.getDate()).padStart(2, '0');
+    s.count = (s.last === yk) ? (s.count + 1) : 1;
+    s.last = tk;
+    store.set('ffp_daily_streak', s);
+    return s;
+  }
+  var MONTHS3 = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+  function paintDaily() {
+    $('dailyDayTxt').textContent = 'Day #' + dayNumber();
+    var nd = new Date();
+    $('calMon').textContent = MONTHS3[nd.getMonth()];
+    $('calDay').textContent = String(nd.getDate());
+    var s = readDailyStreak();
+    $('dailyStreakTxt').textContent = '🔥 ×' + (s.count || 0);
+    var best = store.get(dailyBestKey(), null);
+    $('dailyBestTxt').textContent = best ? '· best ' + fmt(best, false) : '';
+  }
+
+  var RANKS = [
+    { ms: 50000, icon: '👑', name: 'FOCUS GRANDMASTER' },
+    { ms: 80000, icon: '💎', name: 'FOCUS MASTER' },
+    { ms: 115000, icon: '⚡', name: 'FOCUS NINJA' },
+    { ms: 160000, icon: '🎯', name: 'FOCUS HUNTER' },
+    { ms: 230000, icon: '🌱', name: 'FOCUS ROOKIE' },
+    { ms: 1e15, icon: '🐣', name: 'FOCUS BEGINNER' }
+  ];
+  function rankFor(ms, done) {
+    if (!done) return { icon: '💤', name: 'UNFINISHED RUN' };
+    for (var i = 0; i < RANKS.length; i++) if (ms <= RANKS[i].ms) return RANKS[i];
+    return RANKS[RANKS.length - 1];
+  }
+  var AVG_MS = { start: 161000, med: 185000, adv: 225000, daily: 185000 };
+  function compareLine(ms, done) {
+    var avg = AVG_MS[state.level] || 185000;
+    if (!done) return 'Average human: ' + fmt(avg, false) + ' · finish a run to get your percentile';
+    var top = clamp(Math.round((ms / avg) * 50), 1, 98);
+    return 'Average human: ' + fmt(avg, false) + ' · You: ' + fmt(ms, false) + ' — top ' + top + '% ⚡';
+  }
+
+  /* ---------------- challenge links (beat-your-friend) ---------------- */
+  var playerName = store.get('ffp_name', '');
+  function baseURL() {
+    try {
+      var h = String((window.location && window.location.href) || '');
+      var i = h.indexOf('#');
+      if (i >= 0) h = h.slice(0, i);
+      return /^https?:/i.test(h) ? h : 'https://focusflow.app/';
+    } catch (e) { return 'https://focusflow.app/'; }
+  }
+  function challengeURL(ms) {
+    var nm = ((playerName || 'Player') + '').replace(/[^A-Za-z0-9 _-]/g, '').trim() || 'Player';
+    return baseURL() + '#beat-' + encodeURIComponent(nm) + '-' + Math.round(ms) + '-' + state.level;
+  }
+  function parseChallenge() {
+    var h = '';
+    try { h = String((window.location && window.location.hash) || ''); } catch (e) { return; }
+    var m = /^#beat-([^-]+)-(\d+)-(\w+)/.exec(h);
+    if (!m) return;
+    var who = decodeURIComponent(m[1]).slice(0, 18), ms = parseInt(m[2], 10) || 0;
+    if (!ms || ms < 3000) return;
+    $('chWho').textContent = who;
+    $('chTime').textContent = fmt(ms, false);
+    $('challengeBar').classList.remove('hidden');
+    $('btnAccept').addEventListener('click', function () {
+      $('challengeBar').classList.add('hidden');
+      sfx.click(); buzz(10);
+      if (LEVELS[m[3]] && m[3] !== state.level) applyLevel(m[3], true);
+      toast('⚔️ Challenge accepted — beat ' + who + ' (' + fmt(ms, false) + ')!', 2400);
+      var d = $('difficulty');
+      if (d && d.scrollIntoView) { try { d.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {} }
+    });
+    $('btnChClose').addEventListener('click', function () { $('challengeBar').classList.add('hidden'); sfx.click(); });
   }
 
   /* digit metrics of Baloo 2 800 for tap-box sizing (canvas-measured when possible) */
@@ -913,7 +1073,7 @@ select.native{width:100%;min-height:50px;border-radius:14px;background:rgba(0,0,
   function syncSvgAngles() {
     for (var k = 0; k < 3; k++) {
       if (ringGroups[k]) {
-        ringGroups[k].setAttribute('transform', 'rotate(' + (((manAng[k] / TAU * 360) % 360).toFixed(2)) + ' ' + CX + ' ' + CY + ')');
+        ringGroups[k].style.transform = 'rotate(' + (((manAng[k] / TAU * 360) % 360).toFixed(2)) + 'deg)';
       }
     }
   }
@@ -941,18 +1101,15 @@ select.native{width:100%;min-height:50px;border-radius:14px;background:rgba(0,0,
     } else { manAng[0] = manAng[1] = manAng[2] = 0; syncSvgAngles(); }
   }
   function ensureSpinAnims() {
-    var svgp = $('puzzle');
-    if (typeof svgp.animate !== 'function') { useWaapi = false; return; }
+    if (!ringGroups[0]) return;
+    if (typeof ringGroups[0].animate !== 'function') { useWaapi = false; return; }
     for (var k = 0; k < 3; k++) {
       if (spinAnims[k]) { try { spinAnims[k].cancel(); } catch (e) {} }
       spinAnims[k] = null;
     }
-    if (!ringGroups[0]) return;
     try {
       for (var k2 = 0; k2 < 3; k2++) {
         var g = ringGroups[k2], rs = state.ringSpin[k2];
-        g.style.transformBox = 'view-box';
-        g.style.transformOrigin = CX + 'px ' + CY + 'px';
         spinAnims[k2] = g.animate(
           [{ transform: 'rotate(0deg)' }, { transform: 'rotate(' + (rs.dir * 360) + 'deg)' }],
           { duration: rs.dur, iterations: Infinity, easing: 'linear' }
@@ -987,31 +1144,28 @@ select.native{width:100%;min-height:50px;border-radius:14px;background:rgba(0,0,
     halo.appendChild(el('stop', { offset: '70%', 'stop-color': '#FFFFFF', 'stop-opacity': '.07' }));
     halo.appendChild(el('stop', { offset: '100%', 'stop-color': '#FFFFFF', 'stop-opacity': '0' }));
     defs.appendChild(halo);
-    var vig = el('radialGradient', { id: 'vig', cx: '50%', cy: '46%', r: '55%' });
-    vig.appendChild(el('stop', { offset: '72%', 'stop-color': '#000000', 'stop-opacity': '0' }));
-    vig.appendChild(el('stop', { offset: '100%', 'stop-color': '#1E2A44', 'stop-opacity': '.08' }));
-    defs.appendChild(vig);
     svg.appendChild(defs);
   }
 
   function buildCircle() {
-    var svg = $('puzzle');
+    var base = $('puzzleBase');
     var cells = ringCells();
     state.cells = cells;
 
-    svg.textContent = '';
-    svg.setAttribute('viewBox', '0 0 ' + VB + ' ' + VB);
-    buildDefs(svg);
+    base.textContent = '';
+    base.setAttribute('viewBox', '0 0 ' + VB + ' ' + VB);
+    buildDefs(base);
 
-    /* halo + cream dial */
-    svg.appendChild(el('circle', { cx: CX, cy: CY, r: 299, fill: 'url(#halo)' }));
-    svg.appendChild(el('circle', { cx: CX, cy: CY, r: R, fill: '#F5F1E7' }));
+    /* halo + cream dial (static layer: painted once, never re-rasterized) */
+    base.appendChild(el('circle', { cx: CX, cy: CY, r: 299, fill: 'url(#halo)' }));
+    base.appendChild(el('circle', { cx: CX, cy: CY, r: R, fill: '#F5F1E7' }));
 
-    /* three ring groups = three independent spin layers */
+    /* three ring SVGs = three independent GPU-composited spin layers */
     var i, k;
     for (k = 0; k < 3; k++) {
-      ringGroups[k] = el('g', {});
-      svg.appendChild(ringGroups[k]);
+      ringGroups[k] = $('ringSvg' + k);
+      ringGroups[k].textContent = '';
+      ringGroups[k].setAttribute('viewBox', '0 0 ' + VB + ' ' + VB);
     }
 
     var nums = layoutFor(state.level);
@@ -1041,12 +1195,11 @@ select.native{width:100%;min-height:50px;border-radius:14px;background:rgba(0,0,
       state.ordered.push(rec);
     }
 
-    /* centre disc (screenshot has a plain circle around the red digit) */
-    svg.appendChild(el('circle', { cx: CX, cy: CY, r: RINGS[2][1], fill: '#F6F2E8', stroke: '#DAD6CA', 'stroke-width': '1.5' }));
+    /* centre disc rides ring 2's own layer (perfect circle => rotation-invisible) */
+    ringGroups[2].appendChild(el('circle', { cx: CX, cy: CY, r: RINGS[2][1], fill: '#F6F2E8', stroke: '#DAD6CA', 'stroke-width': '1.5' }));
 
-    /* dial depth vignette + rim */
-    svg.appendChild(el('circle', { cx: CX, cy: CY, r: R, fill: 'url(#vig)' }));
-    svg.appendChild(el('circle', { cx: CX, cy: CY, r: R, fill: 'none', stroke: '#EDE9DE', 'stroke-width': '2.5' }));
+    /* rim on the static base layer */
+    base.appendChild(el('circle', { cx: CX, cy: CY, r: R, fill: 'none', stroke: '#EDE9DE', 'stroke-width': '2.5' }));
 
     /* rim minute-ticks on dark bg (screenshot style), majors every 5th */
     var minorT = [], majorT = [], tt;
@@ -1057,8 +1210,8 @@ select.native{width:100%;min-height:50px;border-radius:14px;background:rgba(0,0,
                'L' + (CX + r2 * Math.cos(ta)).toFixed(2) + ' ' + (CY + r2 * Math.sin(ta)).toFixed(2);
       (five ? majorT : minorT).push(sd);
     }
-    svg.appendChild(el('path', { d: minorT.join(''), fill: 'none', stroke: 'rgba(235,240,255,.26)', 'stroke-width': '1' }));
-    svg.appendChild(el('path', { d: majorT.join(''), fill: 'none', stroke: 'rgba(235,240,255,.5)', 'stroke-width': '1.8' }));
+    base.appendChild(el('path', { d: minorT.join(''), fill: 'none', stroke: 'rgba(235,240,255,.26)', 'stroke-width': '1' }));
+    base.appendChild(el('path', { d: majorT.join(''), fill: 'none', stroke: 'rgba(235,240,255,.5)', 'stroke-width': '1.8' }));
 
     $('totalTxt').textContent = MAXN;
     relayoutTokens();
@@ -1458,16 +1611,188 @@ select.native{width:100%;min-height:50px;border-radius:14px;background:rgba(0,0,
     st.recent.unshift({ ms: ms, done: !!done, reached: reached || 0, lvl: lvl, at: Date.now() });
     st.recent = st.recent.slice(0, 8);
     store.set(statsKey(lvl), st);
+    if (lvl === 'daily') {
+      var db = store.get(dailyBestKey(), null);
+      if (db === null || ms < db) store.set(dailyBestKey(), ms);
+      if (done) updateDailyStreak();
+      paintDaily();
+    }
     renderLeaderboard();
     return { isBestAll: isBestAll, isBestToday: isBestToday };
   }
 
   var shareText = '';
+  var lastModal = { done: false, ms: 0, reached: 0 };
   function buildShare(done, ms, reached) {
-    var L = LEVELS[state.level].label;
-    if (done) return 'I found 1-50 in ' + fmt(ms, false) + ' on ' + L + ' mode of FocusFlow Pro and won ' + state.runCoins + ' coins 🪙! Can you beat me? 🔥 #FocusChallenge';
-    return 'I reached #' + reached + ' (' + L + ') on FocusFlow Pro! Can you go further?';
+    var L = LEVELS[state.level].label, rk = rankFor(ms, done), url = challengeURL(ms);
+    var who = playerName ? playerName : 'I';
+    if (done) return who + ' finished 1–50 in ' + fmt(ms, false) + ' (' + L + ') and became ' + rk.icon + ' ' + rk.name + ' on FocusFlow Pro — +' + state.runCoins + ' coins 🪙! Beat them 👊 ' + url;
+    return who + ' reached #' + reached + ' on ' + L + ' mode of FocusFlow Pro! Can you go further? ' + url;
   }
+
+  /* ---------------- story card: 1080×1920 neon run-card ---------------- */
+  function rr(g, x, y, w, h, r) {
+    g.beginPath();
+    g.moveTo(x + r, y);
+    g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
+    g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r);
+    g.closePath();
+  }
+  function makeStoryCard(done, ms, reached) {
+    var cv = document.createElement('canvas');
+    cv.width = 1080; cv.height = 1920;
+    var g = cv.getContext('2d');
+    if (!g) return null;
+    var rk = rankFor(ms, done), L = LEVELS[state.level].label;
+    var nm = (playerName || 'PLAYER').toUpperCase().slice(0, 16);
+
+    g.fillStyle = '#0A0E1E'; g.fillRect(0, 0, 1080, 1920);
+    var rad = g.createRadialGradient(540, 760, 60, 540, 760, 900);
+    rad.addColorStop(0, 'rgba(0,217,255,.20)'); rad.addColorStop(1, 'rgba(0,217,255,0)');
+    g.fillStyle = rad; g.fillRect(0, 0, 1080, 1920);
+    var rad2 = g.createRadialGradient(120, 250, 40, 120, 250, 620);
+    rad2.addColorStop(0, 'rgba(123,47,255,.25)'); rad2.addColorStop(1, 'rgba(123,47,255,0)');
+    g.fillStyle = rad2; g.fillRect(0, 0, 1080, 1920);
+
+    /* star dust seeded by the run — no two cards alike (proto Path Art 😉) */
+    var rnd = seedRand((Math.round(ms) || 7) ^ (state.level === 'daily' ? 991 : 101));
+    var i;
+    for (i = 0; i < 150; i++) {
+      var sx = rnd() * 1080, sy = rnd() * 1920, sr = 1 + rnd() * 3;
+      g.globalAlpha = 0.08 + rnd() * 0.5;
+      g.fillStyle = i % 6 === 0 ? '#9AD8FF' : (i % 11 === 0 ? '#FFD166' : '#FFFFFF');
+      g.beginPath(); g.arc(sx, sy, sr, 0, 6.2832); g.fill();
+    }
+    g.globalAlpha = 1;
+
+    /* mini target-board emblem */
+    g.save(); g.translate(540, 470);
+    g.fillStyle = '#F5F1E7'; g.beginPath(); g.arc(0, 0, 235, 0, 6.2832); g.fill();
+    g.strokeStyle = '#D8D4C9'; g.lineWidth = 4;
+    [196, 124, 58].forEach(function (r) { g.beginPath(); g.arc(0, 0, r, 0, 6.2832); g.stroke(); });
+    for (i = 0; i < 48; i++) {
+      var ta = i / 48 * 6.2832 - 1.5708, maj = i % 4 === 0;
+      g.strokeStyle = 'rgba(235,240,255,' + (maj ? '.85' : '.4') + ')';
+      g.lineWidth = maj ? 4 : 2;
+      g.beginPath();
+      g.moveTo(Math.cos(ta) * (maj ? 240 : 244), Math.sin(ta) * (maj ? 240 : 244));
+      g.lineTo(Math.cos(ta) * (maj ? 258 : 254), Math.sin(ta) * (maj ? 258 : 254));
+      g.stroke();
+    }
+    g.fillStyle = '#E8343F';
+    g.font = '800 88px "Baloo 2", Arial, sans-serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText('1→50', 0, 4);
+    g.restore();
+
+    /* header */
+    g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+    g.fillStyle = '#9AD8FF'; g.font = '800 34px "Baloo 2", Arial, sans-serif';
+    g.fillText('FOCUSFLOW PRO · ' + L + (state.level === 'daily' ? ' · DAY #' + dayNumber() : ''), 540, 830);
+
+    /* the time — hero element */
+    g.fillStyle = '#EAFBFF';
+    try { g.shadowColor = 'rgba(0,217,255,.8)'; g.shadowBlur = 46; } catch (e) {}
+    g.font = '800 168px "JetBrains Mono", "Courier New", monospace';
+    g.fillText(done ? fmt(ms, true) : '#' + reached, 540, 1010);
+    try { g.shadowBlur = 0; } catch (e) {}
+
+    /* rank pill */
+    var label = rk.icon + '  ' + rk.name;
+    g.font = '800 44px "Baloo 2", Arial, sans-serif';
+    var tw = 0;
+    try { tw = g.measureText(label).width; } catch (e) { tw = label.length * 30; }
+    if (!isFinite(tw) || tw <= 0) tw = label.length * 30;
+    var pw = tw + 84;
+    var grad = g.createLinearGradient(540 - pw / 2, 0, 540 + pw / 2, 0);
+    grad.addColorStop(0, '#FFD166'); grad.addColorStop(1, '#FF8A3D');
+    rr(g, 540 - pw / 2, 1075, pw, 88, 44);
+    g.fillStyle = grad; g.fill();
+    g.fillStyle = '#221100';
+    g.fillText(label, 540, 1134);
+
+    /* percentile + coins */
+    g.fillStyle = '#8C99AE'; g.font = '700 33px "Baloo 2", Arial, sans-serif';
+    g.fillText(compareLine(ms, done), 540, 1252);
+    g.fillStyle = '#FFE19A'; g.font = '800 40px "Baloo 2", Arial, sans-serif';
+    g.fillText('+' + state.runCoins + ' coins 🪙 this run', 540, 1326);
+
+    /* CTA card */
+    rr(g, 90, 1470, 900, 212, 36);
+    g.fillStyle = 'rgba(255,255,255,.07)'; g.fill();
+    g.strokeStyle = 'rgba(0,217,255,.5)'; g.lineWidth = 3;
+    rr(g, 90, 1470, 900, 212, 36); g.stroke();
+    g.fillStyle = '#FFFFFF'; g.font = '900 50px "Baloo 2", Arial, sans-serif';
+    g.fillText(done ? 'CAN YOU BEAT ' + nm + '? 👊' : 'CAN YOU GO FURTHER? 👊', 540, 1568);
+    g.fillStyle = '#7FD8F5'; g.font = '700 34px "JetBrains Mono", "Courier New", monospace';
+    g.fillText(baseURL().replace(/^https?:\/\//i, '').replace(/\/$/, '') + '  →', 540, 1634);
+
+    /* footer */
+    g.fillStyle = '#5C6577'; g.font = '700 27px "Baloo 2", Arial, sans-serif';
+    g.fillText('free · no ads · find 1→50 on a spinning board', 540, 1762);
+    g.fillStyle = '#00D9FF'; g.font = '900 30px "Baloo 2", Arial, sans-serif';
+    g.fillText('#FocusChallenge', 540, 1816);
+    return cv;
+  }
+  function downloadBlob(blob, name) {
+    try {
+      if (typeof URL === 'undefined' || !URL.createObjectURL) return false;
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = name;
+      document.body.appendChild(a); a.click();
+      setTimeout(function () { if (a.parentNode) a.parentNode.removeChild(a); }, 400);
+      setTimeout(function () { try { URL.revokeObjectURL(url); } catch (e) {} }, 4000);
+      return true;
+    } catch (e) { return false; }
+  }
+  var storyBusy = false;
+  $('btnStory').addEventListener('click', function () {
+    if (storyBusy) return;
+    storyBusy = true;
+    $('storyLabel').textContent = 'RENDERING…';
+    sfx.click();
+    setTimeout(function () {
+      try {
+        var cv = makeStoryCard(lastModal.done, lastModal.ms, lastModal.reached);
+        if (!cv) { toast('Image not supported on this browser'); $('storyLabel').textContent = 'STORY IMAGE'; storyBusy = false; return; }
+        cv.toBlob(function (blob) {
+          storyBusy = false;
+          $('storyLabel').textContent = 'STORY IMAGE';
+          if (!blob) { toast('Could not render the image'); return; }
+          var fname = 'focusflow-story.png', shared = false;
+          try {
+            var file = new File([blob], fname, { type: 'image/png' });
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+              shared = true;
+              navigator.share({ files: [file], title: 'FocusFlow Pro', text: shareText })['catch'](function () {
+                downloadBlob(blob, fname);
+              });
+              toast('Story card ready 📸 — post it!', 2200);
+            }
+          } catch (e) { shared = false; }
+          if (!shared) {
+            var ok2 = downloadBlob(blob, fname);
+            toast(ok2 ? 'Story card downloaded 📸 — drop it on your story!' : 'Saving images is blocked here', 2400);
+          }
+          burst(0.8);
+        }, 'image/png');
+      } catch (e) {
+        storyBusy = false;
+        $('storyLabel').textContent = 'STORY IMAGE';
+        toast('Could not render the image');
+      }
+    }, 60);
+  });
+
+  $('mName').addEventListener('input', function () {
+    playerName = ($('mName').value || '').trim().slice(0, 16);
+    store.set('ffp_name', playerName);
+    if (lastModal.ms) {
+      shareText = buildShare(lastModal.done, lastModal.ms, lastModal.reached);
+      $('sharePreview').textContent = '“' + shareText + '”';
+    }
+  });
 
   function openModal(done, ms, reached, flags) {
     var m = $('modal');
@@ -1477,7 +1802,19 @@ select.native{width:100%;min-height:50px;border-radius:14px;background:rgba(0,0,
     $('mTitle').textContent = done ? 'Your Time' : 'Nice try — here\'s your run';
     var base = fmt(ms, false), tenths = Math.floor((ms % 1000) / 100);
     $('mTime').innerHTML = base + '<span class="tenths">.' + tenths + '</span>';
-    $('mSub').textContent = LEVELS[state.level].label + ' · 1–50' + (done ? ' · COMPLETE · +' + state.runCoins + ' 🪙 is run' : ' · reached #' + reached);
+    $('mSub').textContent = LEVELS[state.level].label + ' · 1–50' + (done ? ' · COMPLETE · +' + state.runCoins + ' 🪙 this run' : ' · reached #' + reached);
+
+    lastModal = { done: done, ms: ms, reached: reached };
+    var rk2 = rankFor(ms, done);
+    $('mRankIcon').textContent = rk2.icon;
+    $('mRankName').textContent = done ? rk2.name : 'UNFINISHED RUN';
+    $('mCompare').textContent = compareLine(ms, done);
+    if (state.level === 'daily' && done) {
+      var stD = readDailyStreak();
+      $('mDaily').textContent = '🎯 Day #' + dayNumber() + ' complete · 🔥 streak ×' + stD.count;
+      $('mDaily').classList.remove('hidden');
+    } else { $('mDaily').classList.add('hidden'); }
+    $('mName').value = playerName;
 
     var rank = '';
     if (done) {
@@ -1498,7 +1835,7 @@ select.native{width:100%;min-height:50px;border-radius:14px;background:rgba(0,0,
       sel.appendChild(o);
     }
     $('sharePreview').textContent = '“' + shareText + '”';
-    $('copyLabel').textContent = 'COPY';
+    $('copyLabel').textContent = 'COPY LINK';
     $('partialBox').classList.toggle('hidden', !!done);
     if (navigator.share) { $('btnNative').classList.remove('hidden'); }
 
@@ -1592,9 +1929,13 @@ select.native{width:100%;min-height:50px;border-radius:14px;background:rgba(0,0,
 
   function applyLevel(lvl, silent) {
     state.level = lvl;
+    freshSeed(lvl);
     var L = LEVELS[lvl];
     state.ringSpin = L.spin.map(function (o) { return { dur: o.dur, dir: o.dir }; });
-    $('modeTag').textContent = L.tag;
+    Array.prototype.forEach.call($('difficulty').querySelectorAll('button'), function (x) {
+      x.setAttribute('aria-pressed', x.getAttribute('data-level') === lvl ? 'true' : 'false');
+    });
+    $('modeTag').textContent = lvl === 'daily' ? ('DAILY #' + dayNumber() + ' · 1–50 · SAME FOR ALL') : L.tag;
     ensureSpinAnims();
     applyLayout(lvl);
     bootStateReset(true);
@@ -1603,6 +1944,7 @@ select.native{width:100%;min-height:50px;border-radius:14px;background:rgba(0,0,
       sfx.click();
       if (lvl === 'med') toast('MEDIUM 🌀 — middle ring now spins REVERSE!', 2100);
       else if (lvl === 'adv') toast('ADVANCED 😈 — every ring its own speed + bursts!', 2200);
+      else if (lvl === 'daily') toast('DAILY CHALLENGE 🎯 — Day #' + dayNumber() + ' · same board for everyone!', 2300);
       else toast('STARTING 🌱 — the classic viral board, gentle spin', 1800);
     }
   }
@@ -1615,6 +1957,12 @@ select.native{width:100%;min-height:50px;border-radius:14px;background:rgba(0,0,
       if (lvl === state.level) { sfx.click(); return; }
       applyLevel(lvl, false);
     });
+  });
+
+  /* daily challenge entry (Wordle hook) */
+  $('btnDaily').addEventListener('click', function () {
+    if (state.level === 'daily') { sfx.click(); return; }
+    applyLevel('daily', false);
   });
 
   /* locked party teaser -> waitlist funnel */
@@ -1635,7 +1983,12 @@ select.native{width:100%;min-height:50px;border-radius:14px;background:rgba(0,0,
   Array.prototype.forEach.call(document.querySelectorAll('[data-close]'), function (b) {
     b.addEventListener('click', function () { sfx.click(); closeModal(); });
   });
-  $('btnAgain').addEventListener('click', function () { closeModal(); sfx.click(); reset(true); start(); });
+  $('btnAgain').addEventListener('click', function () {
+    closeModal(); sfx.click();
+    if (state.level === 'med' || state.level === 'adv') { applyLevel(state.level, true); toast('Fresh board — no two runs alike 🎲', 1600); }
+    else { reset(true); }
+    start();
+  });
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && $('modal').classList.contains('open')) closeModal();
     if ($('modal').classList.contains('open')) return;
@@ -1665,6 +2018,10 @@ select.native{width:100%;min-height:50px;border-radius:14px;background:rgba(0,0,
     }
   }
   paintWaitlist();
+  /* Optional: paste a Formspree endpoint (https://formspree.io/f/xxxxxxx) here.
+     On Netlify hosting no endpoint is needed — the POST to '/' below is captured
+     automatically and shows up in the Netlify dashboard (Forms section), free. */
+  var WAITLIST_ENDPOINT = '';
   $('wlForm').addEventListener('submit', function (e) {
     e.preventDefault();
     var v = ($('wlEmail').value || '').trim();
@@ -1678,6 +2035,12 @@ select.native{width:100%;min-height:50px;border-radius:14px;background:rgba(0,0,
     }
     WL = { email: v, at: Date.now(), mode: state.level };
     var saved = store.set('ffp_waitlist', WL);
+    try {
+      if (window.fetch) {
+        var wlPost = new URLSearchParams({ 'form-name': 'ffp-waitlist', email: v, level: state.level, when: new Date().toISOString() });
+        window.fetch(WAITLIST_ENDPOINT || '/', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: wlPost.toString() })['catch'](function () {});
+      }
+    } catch (err) {}
     sfx.win(); buzz(20); burst(0.7);
     paintWaitlist();
     toast(saved ? 'You\'re on the list 🚀' : 'Saved for this session (storage blocked)', 2600);
@@ -1702,7 +2065,7 @@ select.native{width:100%;min-height:50px;border-radius:14px;background:rgba(0,0,
   }
   function sizeCanvas() {
     if (!ctx) return;
-    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    DPR = Math.min(window.devicePixelRatio || 1, 1.5); /* retina cap: halves canvas fill cost on phones */
     Wx = window.innerWidth; Hy = window.innerHeight;
     cvs.width = Math.floor(Wx * DPR); cvs.height = Math.floor(Hy * DPR);
     cvs.style.width = Wx + 'px'; cvs.style.height = Hy + 'px';
@@ -1714,7 +2077,7 @@ select.native{width:100%;min-height:50px;border-radius:14px;background:rgba(0,0,
     if (!bgAlive) drawBGStatic();
   }
   function seedStars() {
-    var count = Math.round(clamp(Wx * Hy / 16000, 36, 84)), i, rnd = seedRand(99);
+    var count = Math.round(clamp(Wx * Hy / 22000, 30, 64)), i, rnd = seedRand(99);
     stars = [];
     for (i = 0; i < count; i++) {
       stars.push({ x: rnd() * Wx, y: rnd() * Hy, r: 0.35 + rnd() * 1.2, a: 0.16 + rnd() * 0.6, tw: 0.4 + rnd() * 1.9, ph: rnd() * 6.28 });
@@ -1767,7 +2130,7 @@ select.native{width:100%;min-height:50px;border-radius:14px;background:rgba(0,0,
         ctx.fillStyle = i % 7 === 0 ? '#9AD8FF' : '#FFFFFF';
         ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 6.2832); ctx.fill();
       }
-      for (i = 0; i < dust.length; i++) {
+      if (!state.running) for (i = 0; i < dust.length; i++) {
         var d = dust[i];
         d.x += d.vx + Math.sin(t * 0.0004 + i) * 0.09;
         d.y += d.vy;
@@ -1828,6 +2191,8 @@ select.native{width:100%;min-height:50px;border-radius:14px;background:rgba(0,0,
     bootStateReset(true);
     paintCoins(false);
     renderLeaderboard();
+    paintDaily();
+    parseChallenge();
     var unlock = function () { audio(); window.removeEventListener('touchstart', unlock); window.removeEventListener('pointerdown', unlock); };
     window.addEventListener('touchstart', unlock, { passive: true });
     window.addEventListener('pointerdown', unlock, { passive: true });
@@ -1841,5 +2206,5 @@ select.native{width:100%;min-height:50px;border-radius:14px;background:rgba(0,0,
     FocusFlow Pro needs JavaScript to run the challenge. Please enable JavaScript and reload.
   </div>
 </noscript>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a40768394a5df4fe',t:'MTc5MDMxMTgxNw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a409a90feb0ee0d2',t:'MTc5MDMzNTQ0NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
